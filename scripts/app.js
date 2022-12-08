@@ -2,6 +2,7 @@
 
 let habbits = [];
 const HABBIT_KEY = 'HABBIT_KEY';
+let globalActiveHabbit;
 
 /* page */
 const page = {
@@ -81,7 +82,7 @@ function rerenderContent(activeHabbit) {
     element.classList.add('habbit');
     element.innerHTML = `<div class="habbit__day">День ${Number(index) + 1}</div>
     <div class="habbit__comment">${activeHabbit.days[index].comment}</div>
-    <button class="habbit__delete">
+    <button class="habbit__delete" onclick="deleteDay(${index})">
       <img src="./images/delete.svg" alt="Удалить день ${index + 1}">
     </button>`;
     page.content.daysConteiner.appendChild(element); // добавляем элемент
@@ -91,6 +92,7 @@ function rerenderContent(activeHabbit) {
 };
 
 function rerender(activeHabbitId) {
+  globalActiveHabbit = activeHabbitId; // Индефикатор приввычки
 	const activeHabbit = habbits.find(habbit => habbit.id === activeHabbitId);
 
   if (!activeHabbit) {
@@ -101,6 +103,51 @@ function rerender(activeHabbitId) {
   rerenderHead(activeHabbit);
   rerenderContent(activeHabbit);
 }
+
+// функция для добавления дня
+function addDays(event) {
+  const form = event.target;
+  event.preventDefault(); // отменить действие браузера по умолчанию (Отменяем переход по ссылке)
+
+  const data = new FormData(form); // FormData - объект, представляющий данные HTML формы
+  const comment = data.get('comment'); // Получаем комментарий
+  form['comment'].classList.remove('error');
+
+  if(!comment) {
+    form['comment'].classList.add('error'); // Если нет комментария, красим инпут в красный
+  }
+
+  habbits = habbits.map(habbit => {
+    if(habbit.id === globalActiveHabbit) { // Если id совпадают, то
+      return {
+        ...habbit, //берем все поля хаббита и модифицируем
+        days: habbit.days.concat([{comment}]) // concat созд. новый массив, в который копирует данные из др. массивов и доп-ые значения
+      }
+    }
+    return habbit;
+  });
+
+  form['comment'].value = ''; // Очищаем
+  rerender(globalActiveHabbit);
+  saveData() // Сохраняем данные (что бы при перезагрузки они сохранились)
+};
+
+// функция удаления дня
+function deleteDay(index) {
+  habbits = habbits.map(habbit => {
+    if(habbit.id === globalActiveHabbit) { // Если id совпадают, то
+      habbit.days.splice(index, 1) // Удаляем привычку (массив) через splice
+      return {
+        ... habbit,
+        days: habbit.days
+      };
+    }
+    return habbit;
+  });
+
+  rerender(globalActiveHabbit);
+  saveData()
+};
 
 /* init */
 (() => {
