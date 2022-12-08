@@ -15,6 +15,9 @@ const page = {
   content: {
     daysConteiner: document.getElementById('days'),
     nextDay: document.querySelector('.habbit__day')
+  },
+  popup: {
+    index: document.getElementById('add-habbit-popup'),
   }
 }
 
@@ -30,6 +33,15 @@ function loadData() {
 function saveData() {
 	localStorage.setItem(HABBIT_KEY, JSON.stringify(habbits));
 }
+
+// Функция закрытия и открытия попапа
+function togglePopup() {
+  if(page.popup.index.classList.contains('cover_hidden')) { // Проверяем наличие класса
+    page.popup.index.classList.remove('cover_hidden');
+  } else {
+    page.popup.index.classList.add('cover_hidden');
+  }
+};
 
 /* render */
 function rerenderMenu(activeHabbit) {
