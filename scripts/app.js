@@ -14,10 +14,11 @@ const page = {
   },
   content: {
     daysConteiner: document.getElementById('days'),
-    nextDay: document.querySelector('.habbit__day')
+    nextDay: document.querySelector('.habbit__day'),
   },
   popup: {
     index: document.getElementById('add-habbit-popup'),
+    iconField: document.querySelector('.popup__form input[name="icon"]'),
   }
 }
 
@@ -41,6 +42,42 @@ function togglePopup() {
   } else {
     page.popup.index.classList.add('cover_hidden');
   }
+};
+
+function resetForm(form, fields) {
+  for(const field of fields) {
+    form[field].value = ''; // Очищаем поле
+  }
+};
+
+function validateAndGetFormData(form, fields) { // Передаем в качестве параметров форму и поля формы
+  const formData = new FormData(form); // FormData - объект, представляющий данные HTML формы
+  const res = {}; // Объект полей
+
+  for(const field of fields) { // Проходимся по всем полям формы
+    const fieldValue = formData.get(field); // Получаем форму
+    form[field].classList.remove('error');
+
+    if(!fieldValue) { // Если не находим, то удаляем класс error
+      form[field].classList.add('error');
+    }
+
+    res[field] = fieldValue; // Заполняем форму (комментарием)
+  }
+
+  // Проверяем валидность формы
+  let isValid = true;
+  for(const field of fields) {
+    if(!res[field]) {
+      isValid = false;
+    }
+  }
+
+  if(!isValid) { // Если форма не воалидна, то
+    return; // возвращаем undefined
+  }
+
+  return res;
 };
 
 /* render */
@@ -121,25 +158,23 @@ function addDays(event) {
   const form = event.target;
   event.preventDefault(); // отменить действие браузера по умолчанию (Отменяем переход по ссылке)
 
-  const data = new FormData(form); // FormData - объект, представляющий данные HTML формы
-  const comment = data.get('comment'); // Получаем комментарий
-  form['comment'].classList.remove('error');
+  const data = validateAndGetFormData(event.target, ['comment']); // Получаем данные, комментария
 
-  if(!comment) {
-    form['comment'].classList.add('error'); // Если нет комментария, красим инпут в красный
+  if(!data) {
+    return;
   }
 
   habbits = habbits.map(habbit => {
     if(habbit.id === globalActiveHabbit) { // Если id совпадают, то
       return {
         ...habbit, //берем все поля хаббита и модифицируем
-        days: habbit.days.concat([{comment}]) // concat созд. новый массив, в который копирует данные из др. массивов и доп-ые значения
+        days: habbit.days.concat([{comment: data.comment}]) // concat созд. новый массив, в который копирует данные из др. массивов и доп-ые значения
       }
     }
     return habbit;
   });
 
-  form['comment'].value = ''; // Очищаем
+  resetForm(event.target, ['comment']);
   rerender(globalActiveHabbit);
   saveData() // Сохраняем данные (что бы при перезагрузки они сохранились)
 };
@@ -159,6 +194,41 @@ function deleteDay(index) {
 
   rerender(globalActiveHabbit);
   saveData()
+};
+
+// функция для работы с иконками привычек в попапе
+function setIcon(context, icon) {
+  page.popup.iconField.value = icon; // поставили в форму
+  const activeIcon = document.querySelector('.icon.icon_active'); // Находим активную иконку
+  activeIcon.classList.remove('icon_active'); // у активной иконки удаляем класс
+  context.classList.add('icon_active');// и добавляем этот класс на нажатую иконку в попапе
+};
+
+// функция для добавления привычек
+function addHabbit(event) {
+  event.preventDefault();
+
+  const data = validateAndGetFormData(event.target, ['name', 'icon', 'target']); // Получаем данные (имени, иконки, цели(таргет))
+
+  if(!data) {
+    return;
+  }
+
+  // Ищем id
+  const maxId = habbits.reduce((acc, habbit) => acc > habbit.id ? acc : habbit.id, 0);
+
+  habbits.push({
+    id: maxId + 1,
+    name: data.name,
+    target: data.target,
+    icon: data.icon,
+    days: [],
+  })
+
+  resetForm(event.target, ['name', 'target']);
+  togglePopup(); // Скрываем попап
+  saveData();
+  rerender(maxId + 1);
 };
 
 /* init */
